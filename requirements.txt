@@ -1,0 +1,17 @@
+python-docx==0.8.11
+pdfminer.six==20221105
+docx2txt==0.8
+spacy==3.6.0
+tqdm
+keybert
+sentence-transformers
+scikit-learn
+numpy
+pandas
+requests
+gradio
+pyyaml
+rich
+langchain
+faiss-cpu
+nltk
