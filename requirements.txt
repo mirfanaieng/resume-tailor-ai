@@ -1,15 +1,21 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+torchaudio
+
 python-docx==0.8.11
 pdfminer.six==20221105
 docx2txt==0.8
-spacy==3.6.0
+spacy==3.7.2
+thinc==8.2.5
 tqdm
 keybert
 sentence-transformers
 scikit-learn
-numpy
+numpy==1.26.4
 pandas
 requests
-gradio
+gradio==3.50.2
 pyyaml
 rich
 langchain
