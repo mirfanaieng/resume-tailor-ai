@@ -1,80 +1,65 @@
-Resume Parser and Job Description Matcher
+# 📄 Resume Parser and Job Description Matcher
 
-This project provides a Resume Parsing and Job Description (JD) Matching system using Python, OCR, and LLM-based text extraction. It parses resume text, extracts structured information, and calculates a match score against job descriptions.
+A complete **Resume Parsing and Job Description (JD) Matching system** built using Python, OCR, and LLM-based text extraction.  
+It parses resume text, extracts structured information, and calculates a match score against job descriptions.
 
-Features
+---
 
-Upload PDF or DOCX resumes
+## ✨ Features
 
-OCR support for scanned resumes
+- Upload PDF or DOCX resumes  
+- OCR support for scanned resumes  
+- LLM-based structured resume parsing  
+- Extract skills, experience, education, projects  
+- Parse and analyze job descriptions  
+- Generate Resume–JD match score  
+- Gradio-based web interface  
+- Modular and extensible codebase  
 
-LLM-based structured resume parsing
+---
 
-Extract skills, experience, education, projects
+## 🧰 Technology Stack
 
-Parse and analyze job descriptions
+- **Python 3.10+**
+- **OCR:** Tesseract, OpenCV  
+- **LLMs:** LLaMA via Ollama, OpenAI-compatible models  
+- **Vector Similarity:** FAISS or SentenceTransformers  
+- **UI:** Gradio  
+- **File Parsing:** pdfplumber, PyPDF2, python-docx  
 
-Generate Resume–JD match score
+---
 
-Gradio-based web interface
+## 🚀 Installation
 
-Modular and extensible codebase
-
-Technology Stack
-
-Python 3.10+
-
-OCR: Tesseract, OpenCV
-
-LLMs: LLaMA via Ollama, OpenAI-compatible models
-
-Vector similarity: FAISS or SentenceTransformers
-
-UI: Gradio
-
-File parsing: pdfplumber, PyPDF2, python-docx
-
-Installation
-1. Clone the repository
+### 1. Clone the repository
+```bash
 git clone https://github.com/yourusername/resume-parser.git
 cd resume-parser
 
+
 2. Create a virtual environment
-python -m venv .venv
+  python -m venv .venv
 
 
 Activate the environment:
 
-Windows:
-
+Windows
 .venv\Scripts\activate
-
-
-Mac/Linux:
-
+Mac/Linux
 source .venv/bin/activate
 
 3. Install dependencies
+
 pip install -r requirements.txt
 
-4. (Optional) Install Tesseract OCR
-
-Linux:
-
-sudo apt install tesseract-ocr
-
-
-Windows: Install from the official Tesseract site.
-
-Usage
+▶️ Usage
 Run the Gradio Web App
 python src/app_gradio.py
 
 Parse a resume using CLI
 python src/parse_resume.py --file samples/resume.pdf
 
-Project Structure
-
+📁 Project Structure
 resume-parser/
 │
 ├── src/
@@ -91,13 +76,13 @@ resume-parser/
 └── .gitignore
 
 
-How It Works
+🔍 How It Works
 
-Extract raw resume text (PDF, DOCX, or OCR).
+Extract raw resume text (PDF, DOCX, or OCR)
 
-Use LLMs to convert text into structured fields.
+Use LLMs to convert text into structured fields
 
-Extract important keywords from the job description.
+Extract important keywords from the job description
 
 Compute similarity using:
 
@@ -107,23 +92,23 @@ Keyword overlap
 
 Embedding similarity
 
-Produce a match score (0–100).
+Produce a match score (0–100)
 
-Provide a breakdown of the score.
+Provide a detailed score breakdown
 
-Roadmap
+🗺️ Roadmap
 
-Add Docker support
+ Add Docker support
 
-Add PDF export for reports
+ Add PDF export for reports
 
-Add ATS compliance checker
+ Add ATS compliance checker
 
-Add multilingual resume parsing
+ Add multilingual resume parsing
 
-Improve JD keyword extraction
+ Improve JD keyword extraction
 
-Contributing
+🤝 Contributing
 
 Fork the repository
 
