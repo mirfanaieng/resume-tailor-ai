@@ -1,142 +1,141 @@
-📄 Resume Parser & Job Description Matcher
+Resume Parser & Job Description Matcher
 
-An intelligent Resume Parsing and JD Matching System built with Python, OCR, and LLM-powered text extraction.
-This project extracts structured information from resumes, analyzes job descriptions, and calculates a match score to help candidates or recruiters quickly evaluate fit.
+An intelligent Resume Parsing and JD Matching System powered by Python, OCR, embeddings, and LLMs.
+It extracts skills, experience, education, and matches resumes against job descriptions using semantic similarity.
 
-🚀 Features
+⭐ Features
 
-📤 Upload PDF/DOCX resumes
+Upload PDF / DOCX resumes
 
-🔍 OCR support for scanned resumes using Tesseract/OpenCV
+OCR support for scanned resumes
 
-🤖 LLM-powered text parsing → Name, email, skills, experience, education
+LLM-powered parsing (Ollama / OpenAI compatible)
 
-📝 Job Description extraction
+Extract skills, experience, projects, education
 
-🎯 Resume–JD Matching Score
+Parse Job Descriptions
 
-📊 Similarity breakdown: skills, experience, keywords
+Generate a Resume–JD Match Score
 
-⚡ Gradio-based Web UI for fast interaction
+Gradio-based Web UI
 
-🧩 Modular code for easy extension
+Modular & production-ready codebase
 
-🐍 Works with Ollama, LLaMA, or OpenAI-compatible models
-
-🛠️ Tech Stack
+🛠 Tech Stack
 
 Python 3.10+
 
-OCR: Tesseract / OpenCV
+LLMs: LLaMA (Ollama), GPT (optional)
 
-LLMs: phi: Latest
+OCR: Tesseract, OpenCV
 
-Vector Search: FAISS / sentence-transformers
+Vector DB: FAISS / SentenceTransformers
 
 Web UI: Gradio
 
-Parsing: PyPDF2, pdfplumber, docx
-
-Backend Utilities: LangChain (optional)
+Parsing: pdfplumber, PyPDF2, python-docx
 
 📦 Installation
-1️⃣ Clone repository
-git clone https://github.com/mirfanaieng/resume-tailor-ai.git
+1. Clone the repo
+git clone https://github.com/yourusername/resume-parser.git
+cd resume-parser
 
-
-2️⃣ Create and activate virtual environment
+2. Create virtual environment
 python -m venv .venv
-source .venv/bin/activate       # Mac/Linux
-.venv\Scripts\activate          # Windows
 
-3️⃣ Install dependencies
+
+Activate:
+
+Windows
+
+.venv\Scripts\activate
+
+
+Linux/Mac
+
+source .venv/bin/activate
+
+3. Install dependencies
 pip install -r requirements.txt
 
+4. (Optional) Install Tesseract OCR
 
-If using Tesseract OCR:
+Linux:
 
-sudo apt install tesseract-ocr   # Ubuntu
+sudo apt install tesseract-ocr
 
 
-Windows users: download Tesseract installer.
+Windows: Install from official site.
 
-▶️ Usage
-Run Gradio App
+▶️ Run the App
+Gradio Web UI
 python src/app_gradio.py
 
-Or run CLI parsing
-python src/parse_resume.py --file sample_resume.pdf
+Parse a Resume (CLI)
+python src/parse_resume.py --file samples/resume.pdf
 
 📁 Project Structure
 resume-parser/
-│── src/
-│   ├── extractor.py         # PDF/Text extraction
-│   ├── parser_llm.py        # LLM-based resume parsing
-│   ├── jd_matcher.py        # Job description matcher
-│   ├── embeddings.py        # Vector similarity
+│
+├── src/
+│   ├── extractor.py        # Extract text from PDF, DOCX, OCR
+│   ├── parser_llm.py       # Parse resume using LLM
+│   ├── jd_matcher.py       # Match resume with job description
+│   ├── embeddings.py       # Vector similarity
 │   ├── utils.py
-│   ├── app_gradio.py        # Web UI
-│── examples/
-│── requirements.txt
-│── README.md
-│── .gitignore
+│   └── app_gradio.py       # Web UI
+│
+├── examples/
+├── requirements.txt
+├── README.md
+└── .gitignore
 
 ⚙️ Environment Variables (Optional)
 
-Create .env file:
+Create a .env file:
 
-OPENAI_API_KEY=your_key (optional)
+OPENAI_API_KEY=your_key
 OLLAMA_MODEL=llama3.2
 EMBEDDING_MODEL=all-MiniLM-L6-v2
 
 🎯 How Matching Works
 
-Extract resume text
-→ PDF, DOCX, or OCR-based extraction
+Extract raw resume text
 
-Parse into structured fields using an LLM
+Parse structured fields using an LLM
 
-Extract JD keywords
+Extract keywords from JD
 
-Calculate similarity using:
+Compute:
 
-Skills match
+Skills similarity
 
 Keyword overlap
 
-Vector embeddings
+Embedding similarity
 
-Generate match score (0–100)
+Generate a final 0–100 match score
 
-Return explanation breakdown
+Provide a breakdown explanation
 
-📸 Screenshots (Optional)
+🚧 Roadmap
 
-Add UI screenshots or GIFs.
-
-
-🛠️ Roadmap
-
- Improve OCR for low-quality resumes
-
- Add multilingual resume support
-
- AI-based JD suggestion
-
- ATS compliance checker
+ Add Docker support
 
  Export results to PDF
 
- Add Docker container support
+ Multi-language support
+
+ ATS compatibility checker
+
+ JD auto-generation
 
 🤝 Contributing
 
-Contributions are welcome!
+Fork the repo
 
-Fork this repo
+Create a new branch
 
-Create a feature branch
+Commit your changes
 
-Commit changes
-
-Create a pull request
+Submit a pull request
