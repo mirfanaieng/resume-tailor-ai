@@ -1,57 +1,56 @@
-Resume Parser & Job Description Matcher
+Resume Parser and Job Description Matcher
 
-An intelligent Resume Parsing and JD Matching System powered by Python, OCR, embeddings, and LLMs.
-It extracts skills, experience, education, and matches resumes against job descriptions using semantic similarity.
+This project provides a Resume Parsing and Job Description (JD) Matching system using Python, OCR, and LLM-based text extraction. It parses resume text, extracts structured information, and calculates a match score against job descriptions.
 
-⭐ Features
+Features
 
-Upload PDF / DOCX resumes
+Upload PDF or DOCX resumes
 
 OCR support for scanned resumes
 
-LLM-powered parsing (Ollama / OpenAI compatible)
+LLM-based structured resume parsing
 
-Extract skills, experience, projects, education
+Extract skills, experience, education, projects
 
-Parse Job Descriptions
+Parse and analyze job descriptions
 
-Generate a Resume–JD Match Score
+Generate Resume–JD match score
 
-Gradio-based Web UI
+Gradio-based web interface
 
-Modular & production-ready codebase
+Modular and extensible codebase
 
-🛠 Tech Stack
+Technology Stack
 
 Python 3.10+
 
-LLMs: LLaMA (Ollama), GPT (optional)
-
 OCR: Tesseract, OpenCV
 
-Vector DB: FAISS / SentenceTransformers
+LLMs: LLaMA via Ollama, OpenAI-compatible models
 
-Web UI: Gradio
+Vector similarity: FAISS or SentenceTransformers
 
-Parsing: pdfplumber, PyPDF2, python-docx
+UI: Gradio
 
-📦 Installation
-1. Clone the repo
+File parsing: pdfplumber, PyPDF2, python-docx
+
+Installation
+1. Clone the repository
 git clone https://github.com/yourusername/resume-parser.git
 cd resume-parser
 
-2. Create virtual environment
+2. Create a virtual environment
 python -m venv .venv
 
 
-Activate:
+Activate the environment:
 
-Windows
+Windows:
 
 .venv\Scripts\activate
 
 
-Linux/Mac
+Mac/Linux:
 
 source .venv/bin/activate
 
@@ -65,76 +64,70 @@ Linux:
 sudo apt install tesseract-ocr
 
 
-Windows: Install from official site.
+Windows: Install from the official Tesseract site.
 
-▶️ Run the App
-Gradio Web UI
+Usage
+Run the Gradio Web App
 python src/app_gradio.py
 
-Parse a Resume (CLI)
+Parse a resume using CLI
 python src/parse_resume.py --file samples/resume.pdf
 
-📁 Project Structure
+Project Structure
+
 resume-parser/
 │
 ├── src/
-│   ├── extractor.py        # Extract text from PDF, DOCX, OCR
-│   ├── parser_llm.py       # Parse resume using LLM
-│   ├── jd_matcher.py       # Match resume with job description
-│   ├── embeddings.py       # Vector similarity
+│   ├── extractor.py        # Extract text from PDF/DOCX/OCR
+│   ├── parser_llm.py       # LLM-based resume parsing
+│   ├── jd_matcher.py       # JD similarity and scoring
+│   ├── embeddings.py       # Vector similarity functions
 │   ├── utils.py
-│   └── app_gradio.py       # Web UI
+│   └── app_gradio.py       # Web interface
 │
 ├── examples/
 ├── requirements.txt
 ├── README.md
 └── .gitignore
 
-⚙️ Environment Variables (Optional)
 
-Create a .env file:
+How It Works
 
-OPENAI_API_KEY=your_key
-OLLAMA_MODEL=llama3.2
-EMBEDDING_MODEL=all-MiniLM-L6-v2
+Extract raw resume text (PDF, DOCX, or OCR).
 
-🎯 How Matching Works
+Use LLMs to convert text into structured fields.
 
-Extract raw resume text
+Extract important keywords from the job description.
 
-Parse structured fields using an LLM
+Compute similarity using:
 
-Extract keywords from JD
-
-Compute:
-
-Skills similarity
+Skills matching
 
 Keyword overlap
 
 Embedding similarity
 
-Generate a final 0–100 match score
+Produce a match score (0–100).
 
-Provide a breakdown explanation
+Provide a breakdown of the score.
 
-🚧 Roadmap
+Roadmap
 
- Add Docker support
+Add Docker support
 
- Export results to PDF
+Add PDF export for reports
 
- Multi-language support
+Add ATS compliance checker
 
- ATS compatibility checker
+Add multilingual resume parsing
 
- JD auto-generation
+Improve JD keyword extraction
 
-🤝 Contributing
+Contributing
 
-Fork the repo
+Fork the repository
 
-Create a new branch
+Create a new feature branch
 
 Commit your changes
 
