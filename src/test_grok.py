@@ -1,9 +1,13 @@
 # pip install groq langchain chromadb sentence-transformers
 from os import path
 from extractor import extract_text_from_file
-
+from dotenv import load_dotenv
 from groq import Groq
-client = Groq(api_key="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")
+
+# Load environment variables
+load_dotenv()
+
+client = Groq()
 
 def score_resume_against_jd(resume_text, jd_text):
     prompt = f"""
