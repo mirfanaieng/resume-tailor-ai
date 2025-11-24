@@ -1,17 +1,81 @@
-# Virtual environment
-.venv/
-venv/
+# =========================
+# 1. NEVER commit real data or personal files
+# =========================
+data/
+!data/sample_resumes/
+!data/sample_jds/
+!data/sample_resumes/*.pdf
+!data/sample_jds/*.txt
 
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
+# Block everything in data except fake samples
+data/**/*.pdf
+data/**/*.docx
+data/**/*.json
+data/**/*.txt
+data/**/*.xlsx
+data/**/*.csv
+data/**/temp*/
+output/
+outputs/
+temp/
 
-# Environment and IDE files
+# =========================
+# 2. Secrets & API keys
+# =========================
 .env
-*.log
-.DS_Store
-.ipynb_checkpoints/
+*.env
+.env.local
+.env.*.local
+.groq
+.groqkey
 
-# Data folder
-data/*.env
+# =========================
+# 3. Python & venv
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# =========================
+# 4. IDE & OS junk
+# =========================
+.idea/
+.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
+*.log
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# =========================
+# 5. Build / dist
+# =========================
+build/
+dist/
+*.egg-info/
+*.egg
+*.dist-info/
+
+# =========================
+# 6. Temporary files
+# =========================
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# =========================
+# 7. Gradio / uploads
+# =========================
+uploads/
+temp_uploads/
