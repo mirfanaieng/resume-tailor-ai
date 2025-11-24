@@ -1,230 +1,199 @@
-"""
-Unified Resume and JD Parser with Hybrid Rule-Based + LLM Fallback
-"""
-
-import re
+# src/parser.py
 import json
+import re
 import logging
-from pathlib import Path
-from extractor import extract_text_from_file
+from typing import Dict, Any
+from groq import Groq
+from dotenv import load_dotenv
 
-# Optional NLP support if needed
+
+# Load environment variables
+load_dotenv()
+
+# === CONFIG ===
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("parser")
+
+client = Groq()  # Make sure GROQ_API_KEY is in your environment!
+
+# Try to import your existing rule-based parsers (optional fallback)
 try:
-    import spacy
-    nlp = spacy.load("en_core_web_sm")
-except Exception:
-    nlp = None
-
-# LLM import
+    from parse_resume import parse_resume
+except ImportError:
+    parse_resume = None
 try:
-    from ollama import Ollama
-    llm_client = Ollama()
-except Exception:
-    llm_client = None
-    logging.warning("Ollama client not available. LLM fallback won't work.")
+    from parse_jd import parse_jd
+except ImportError:
+    parse_jd = None
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-# -------------------------
-# Text Cleaning
-# -------------------------
-def clean_text(text: str) -> str:
-    text = text.replace("\t", " ")
-    text = re.sub(r" {2,}", " ", text)
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    return text.strip()
+# ========================================
+# 1. GROQ-POWERED JD & RESUME PARSER (THE MAGIC)
+# ========================================
+def parse_with_groq(text: str, doc_type: str = "jd") -> Dict[str, Any]:
+    """Uses Groq 70B to perfectly parse JD or Resume in <1 second"""
+    
+    schema = {
+        "jd": """
+        {
+          "job_title": "Senior Data Scientist",
+          "company": "Farmdar",
+          "location": "Lahore, Pakistan",
+          "skills": ["Python", "GDAL", "Remote Sensing", "Machine Learning"],
+          "responsibilities": ["Build geospatial models", "Process satellite imagery"],
+          "requirements": ["5+ years in Python", "Experience with GIS tools"],
+          "nice_to_have": ["AgriTech domain", "Docker"]
+        }
+        """,
+        "resume": """
+        {
+          "name": "John Doe",
+          "email": "john@example.com",
+          "phone": "+92 300 1234567",
+          "skills": ["Python", "TensorFlow", "AWS", "Docker"],
+          "experience": ["Led ML team at XYZ", "Built computer vision models"],
+          "education": "MS Computer Science, LUMS"
+        }
+        """
+    }
 
-# -------------------------
-# Email & Phone Extraction
-# -------------------------
-def extract_email(text: str):
-    match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", text)
-    return match.group(0) if match else None
-
-def extract_phone(text: str):
-    pattern = r"(\+?\d{1,3}[- ]?)?\(?\d{2,4}\)?[- ]?\d{6,8}"
-    match = re.search(pattern, text)
-    return match.group(0) if match else None
-
-# -------------------------
-# Sections Extraction
-# -------------------------
-RESUME_HEADERS = [
-    "summary", "about me", "objective",
-    "skills", "technical skills",
-    "experience", "work experience",
-    "employment history",
-    "projects", "project experience",
-    "education", "academics",
-    "certifications",
-    "achievements",
-]
-
-JD_HEADERS = [
-    "position", "job title", "role", "🧱", "must-haves", "nice-to-have", "what you'll do",
-    "work environment", "culture", "communication", "career growth",
-    "our approach", "contract details", "hiring process", "summary"
-]
-
-def extract_sections(text: str, headers=None):
-    if headers is None:
-        headers = RESUME_HEADERS
-    sections = {}
-    header_regex = r"(?im)^([^\w]*({}))[^\n]*".format("|".join([re.escape(h) for h in headers]))
-    matches = list(re.finditer(header_regex, text))
-    for i, match in enumerate(matches):
-        section_title = match.group(2).lower()
-        start = match.end()
-        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
-        content = text[start:end].strip()
-        content = content.lstrip(": \n")
-        sections[section_title] = content
-    return sections
-
-# -------------------------
-# Name Extraction (Resume Only)
-# -------------------------
-SKIP_KEYWORDS = {
-    "email", "phone", "@", "linkedin", "github", "www", "http",
-    "engineer", "developer", "manager", "specialist", "lead", "senior",
-    "dashboard", "company", "department", "project", "experience",
-    "summary", "profile", "objective", "resume", "curriculum", "vitae"
-}
-
-def extract_name(text: str, file_name: str = None) -> str | None:
-    lines = [line.strip() for line in text.split("\n") if line.strip()]
-    if not lines:
-        return Path(file_name).stem if file_name else None
-    for i, line in enumerate(lines[:10]):
-        lowered = line.lower()
-        if any(k in lowered for k in SKIP_KEYWORDS):
-            continue
-        if re.search(r'\d{3,}|\b(cv|resume|curriculum)\b', lowered):
-            continue
-        words = line.split()
-        if 2 <= len(words) <= 4 and re.match(r"^[A-Za-z\s\.\-']+$", line):
-            if line.istitle() or line.isupper():
-                if i == 0:
-                    return line.strip()
-                return line.strip()
-    for line in lines[:5]:
-        words = line.split()
-        if 2 <= len(words) <= 4 and re.match(r"^[A-Za-z\s\.\-']+$", line):
-            return line.strip()
-    if file_name:
-        name = Path(file_name).stem
-        name = re.sub(r'^(cv|resume|cv_|-|_)+', '', name, flags=re.IGNORECASE)
-        name = re.sub(r'(\s+resume|\s+cv).*', '', name, flags=re.IGNORECASE)
-        return name.strip() or None
-    return None
-
-# -------------------------
-# Skills Extraction
-# -------------------------
-def extract_skills_from_section(section_text: str) -> list:
-    if not section_text:
-        return []
-    section_text = section_text.lstrip(": \n").strip()
-    split_phrases = ["Why", "If you are passionate", "Opportunity to work"]
-    for phrase in split_phrases:
-        section_text = section_text.split(phrase)[0]
-    items = re.split(r"[\n,;•\-\u2022]", section_text)
-    skills = [item.strip() for item in items if 1 <= len(item.strip().split()) <= 6]
-    return skills
-
-# -------------------------
-# LLM Fallback
-# -------------------------
-def llm_extract_fields(text: str, doc_type: str = "jd") -> dict:
-    if llm_client is None:
-        logging.warning("LLM client not available, skipping fallback.")
-        return {}
     prompt = f"""
-    Extract key fields from this {doc_type} and return JSON with keys:
-    For resume: name, email, phone, skills
-    For jd: position, company, location, skills
-    Text:
-    {text}
-    """
+You are a professional ATS parser. Extract information from the following {doc_type.upper()} into valid JSON.
+
+Return ONLY the JSON object. No explanations. No markdown.
+
+EXAMPLE OUTPUT for {doc_type}:
+{schema.get(doc_type, schema["jd"])}
+
+TEXT:
+{text[:12000]}
+"""
+
     try:
-        result = llm_client.predict(model="phi:latest", prompt=prompt)
-        # Expect result as JSON string
-        return json.loads(result)
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=1024
+        )
+        raw = response.choices[0].message.content.strip()
+
+        # Extract JSON block
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if match:
+            return json.loads(match.group(0))
+        else:
+            logger.warning("No JSON found, returning raw")
+            return {"raw_output": raw}
+
     except Exception as e:
-        logging.warning(f"LLM extraction failed: {e}")
+        logger.error(f"Groq failed: {e}")
         return {}
 
-# -------------------------
-# Unified Parser
-# -------------------------
-def parse_document(text: str, doc_type: str = "resume", file_name: str = None) -> dict:
-    text = clean_text(text)
+def remove_garbage_keys(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove known garbage keys that sometimes leak from rule-based parsers"""
+    garbage = ["sections", "raw_text", "header", "footer", "metadata", "summary"]
+    for key in garbage:
+        data.pop(key, None)
+    return data
+
+# ========================================
+# 2. CLEANING HELPERS
+# ========================================
+def clean_list(items):
+    """Clean bullet points and normalize strings safely"""
+    if not items:
+        return []
+    
+    cleaned = []
+    for item in items:
+        if not isinstance(item, str):
+            continue
+        # Remove common bullet symbols safely (no invalid ranges!)
+        item = re.sub(r'^[\s•*‑-–—●■▪]+', '', item.strip())   # ← FIXED
+        item = re.sub(r'[\r\t]+', ' ', item)                 # clean tabs/returns
+        item = re.sub(r'\s+', ' ', item).strip()             # collapse spaces
+        
+        # Skip garbage lines
+        if len(item) < 4:
+            continue
+        if item.lower() in {"and", "or", "the", "to", "of", "in", "with", "experience", "skills"}:
+            continue
+        if item.startswith("http"):
+            continue
+            
+        cleaned.append(item.capitalize())
+    
+    # Remove exact duplicates while preserving order
+    seen = set()
+    unique = []
+    for x in cleaned:
+        if x not in seen:
+            seen.add(x)
+            unique.append(x)
+    
+    return unique
+
+
+# ========================================
+# 3. MAIN PARSER (Smart: Rule → Groq → Clean)
+# ========================================
+def parse_document(text: str, doc_type: str = "resume", file_name: str = None) -> Dict[str, Any]:
+    if not text or len(text) < 50:
+        return {"error": "Empty or too short text"}
+
+    logger.info(f"Parsing {doc_type.upper()} ({len(text)} chars)...")
+
+    # Step 1: Try rule-based first (only if exists and good)
     parsed = {}
+    if doc_type == "resume" and parse_resume and callable(parse_resume):
+        try:
+            parsed = parse_resume(text, file_name) or {}
+        except:
+            parsed = {}
+    elif doc_type == "jd" and parse_jd and callable(parse_jd):
+        try:
+            parsed = parse_jd(text) or {}
+        except:
+            parsed = {}
 
-    if doc_type == "resume":
-        parsed = {
-            "name": extract_name(text, file_name),
-            "email": extract_email(text),
-            "phone": extract_phone(text),
-            "sections": extract_sections(text, headers=RESUME_HEADERS),
-        }
-        skills_section = parsed["sections"].get("skills") or parsed["sections"].get("technical skills", "")
-        parsed["skills"] = extract_skills_from_section(skills_section)
-        # LLM fallback if skills empty
-        if not parsed["skills"]:
-            llm_data = llm_extract_fields(text, doc_type="resume")
-            parsed.update(llm_data)
+    # Step 2: Always use Groq — it's better and instant
+    groq_data = parse_with_groq(text, doc_type)
 
-    elif doc_type == "jd":
-        parsed = {
-            "position": None,
-            "location": None,
-            "company": None,
-            "sections": extract_sections(text, headers=JD_HEADERS),
-        }
-        sections = parsed["sections"]
-        # Rule-based extraction
-        pos_match = re.search(r'Position\s*[:\-]\s*(.+)', text, re.IGNORECASE)
-        loc_match = re.search(r'(?:Work Mode|Location|Work Environment)\s*[:\-]\s*(.+)', text, re.IGNORECASE)
-        parsed["position"] = pos_match.group(1).strip() if pos_match else None
-        parsed["location"] = loc_match.group(1).strip() if loc_match else None
-        parsed["company"] = sections.get("summary") or sections.get("our approach") or None
+    # Step 3: Merge (Groq wins on conflict)
+    result = {**parsed, **groq_data}
 
-        skills_section = sections.get("must-haves") or sections.get("nice-to-have") or sections.get("what you'll do") or ""
-        parsed["skills"] = extract_skills_from_section(skills_section)
-        # LLM fallback if nothing found
-        if not any([parsed["position"], parsed["company"], parsed["location"], parsed["skills"]]):
-            llm_data = llm_extract_fields(text, doc_type="jd")
-            parsed.update(llm_data)
+    # Step 4: Clean lists
+    list_fields = ["skills", "responsibilities", "requirements", "nice_to_have", "experience"]
+    for field in list_fields:
+        if field in result:
+            result[field] = clean_list(result[field]) if isinstance(result[field], list) else []
 
-    else:
-        raise ValueError("doc_type must be 'resume' or 'jd'")
+    # Step 5: Ensure skills is always a list of strings
+    if "skills" not in result:
+        result["skills"] = []
+    if isinstance(result["skills"], str):
+        result["skills"] = [s.strip() for s in result["skills"].split(",") if s.strip()]
 
-    return parsed
+    result = remove_garbage_keys(result)
+    logger.info(f"Parsed {doc_type} successfully!")
+    return result
 
-# -------------------------
-# CLI Usage
-# -------------------------
+
+# ========================================
+# CLI TEST
+# ========================================
 if __name__ == "__main__":
     import sys
+    from extractor import extract_text_from_file
 
     if len(sys.argv) < 3:
-        print("Usage: python parser.py <file> <doc_type: resume/jd>")
+        print("Usage: python src/parser.py <file_path> <resume|jd>")
         sys.exit(1)
 
     file_path = sys.argv[1]
     doc_type = sys.argv[2].lower()
-    filename = Path(file_path).stem
 
     text = extract_text_from_file(file_path)
-    parsed = parse_document(text, doc_type=doc_type, file_name=file_path)
-
-    output_dir = Path("data")
-    output_dir.mkdir(exist_ok=True)
-    output_file = output_dir / f"{filename}.json"
-
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(parsed, f, indent=2, ensure_ascii=False)
-
-    logging.info(f"✅ Parsed data saved to {output_file.resolve()}")
-    print(json.dumps(parsed, indent=2, ensure_ascii=False))
+    result = parse_document(text, doc_type=doc_type, file_name=file_path)
+    print(json.dumps(result, indent=2, ensure_ascii=False))

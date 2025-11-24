@@ -1,0 +1,39 @@
+### NAME
+Job Title: AI Engineer
+
+Responsibilities: Develop and deploy NLP models for document parsing and automation, leveraging Python, NLP, Deep Learning, Docker, and Kubernetes. 
+
+Requirements:
+-Skills in Python
+-Knowledge of NLP and Deep Learning techniques
+-Experience with Docker and Kubernetes platforms
+-A minimum of two years experience in ML projects is required
+-Education: BS or MS in Computer Science or related field
+
+### EMAIL
+AI Engineer
+Responsibilities 
+- Develop and deploy NLP models for document parsing and automation, such as generating summaries, extracting keywords, or automating report writing tasks.
+- Apply advanced machine learning techniques to improve the accuracy of NLP models.
+- Collaborate with cross-functional teams to identify business needs and develop customized solutions using cutting-edge tools and technologies like Python, TensorFlow, and Docker.
+
+Requirements 
+- Proficiency in Python, NLP, Deep Learning, and related programming languages such as R or MATLAB.
+- Experience in deploying machine learning models on cloud platforms such as Amazon Web Services (AWS) or Google Cloud Platform (GCP).
+- Familiarity with containerization technologies like Docker for building, testing, and scaling ML applications.
+- Knowledge of Kubernetes for managing and orchestrating distributed systems.
+
+Experience 
+2+ years in NLP projects
+- Developed a state-of-the-art language model that achieved 95% accuracy on the GLUE benchmark suite for natural language understanding tasks.
+- Automated document parsing by training an NLU model to extract named entities, sentiment, and other key features from news articles.
+- Designed and implemented a chatbot using transformers for customer support, resulting in a 30% increase in response time and a 40% reduction in costs compared to manual support.
+
+Education 
+BS or MS in Computer Science or related field (with emphasis on NLP)
+- Completed a master's program in Natural Language Processing at XYZ University, where I gained hands-on experience in developing text classification systems using deep learning algorithms.
+- Participated in several research projects focusing on improving NLP models' performance and scalability.
+
+### SECTIONS
+{'skills':
+

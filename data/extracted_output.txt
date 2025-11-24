@@ -1,0 +1,49 @@
+MUHAMMAD IRFAN
+AI Engineer
++92-300-7147155 m.irfan.aiengineer@gmail.com https://www.linkedin.com/in/muhamma-d-irfan-011120179/ Lahore, Pakistan
+Summary
+AI Engineer with proven experience delivering high-impact clinical AI solutions and scalable production tools. Skilled in model
+development (GANs, classifiers, OCR) and real-world deployment using Python, deep learning, and data engineering pipelines.
+Adept at bridging research to application — optimizing model accuracy, compliance, and usability across large datasets (20K+
+samples).
+Experience
+Career Break (International Exposure) 10/2024 - 10/2025
+Spent a year abroad for personal development and broadening professional perspective.
+AI4LYF Lahore 06/2021 - 10/2024
+AI/ML Engineer
+Bridging the gap between AI research and clinical practices.
+GAN-based Image Reconstruction: Built and optimized Pix2Pix model using loss functions (MAE, VGG, content, classifier-
+based) for imaging enhancement.
+Classifier Development: Trained CNN-based multiclass multilabel classifier on hybrid datasets (real + GAN-generated),
+achieving high accuracy and validated synthetic data reliability.
+Dashboard Engineering: Developed an interactive biomarker monitoring dashboard using Python Dash, improving
+reporting speed and visual analysis for clinical teams.
+OCR Automation: Automated form digitization and data extraction workflows using OpenCV, EasyOCR, and AWS
+Textract, cutting manual entry time and boosting data accuracy.
+Biomedical Audio Classification: Built XGBoost/ExtraTrees models for clinical audio signal classification across 4
+conditions, integrating demographic metadata for higher model robustness.
+Data Infrastructure & Leadership: Designed and led a data collection framework (20K+ validated samples), including
+backend app design, validation pipeline, and team training for safe, compliant data handling.
+DL Lab (KICS, UET)
+Lahore 01/2021 - 02/2021
+AI Intern
+Research lab focusing on machine learning and AI projects.
+Built an interactive regression dashboard using Django, improving data visualization and model evaluation efficiency.
+DigiSol Lahore 10/2020 - 12/2020
+Web Developer Intern
+Web development company.
+Contributed to web development projects using Laravel and Magento.
+Education
+KICS, University of Engineering & Technology (UET), Lahore Lahore 09/2020 - 03/2021
+Data Analytics
+The University of Lahore Lahore 08/2014 - 05/2019
+BS in Software Engineering (CGPA: 3.71 / 4.00)
+Govt. College Boys Zafarwal Narowal 01/2012 - 12/2014
+Intermediate in Computer Science
+Skills
+Generative AI, LLMs, RAG, Prompt Engineering, GANs, Computer Vision, Signal Processing, OCR (Tesseract,
+EasyOCR, AWS Textract, OpenCV), Deep Learning, Python, TensorFlow, PyTorch, Data Visualization (Plotly,
+Seaborn, Dash), Research Implementation, AI Solution Development.
+Courses
+Introduction to Amazon SageMaker, Foundations of Prompt Engineering, Amazon Bedrock: Getting
+Started, Planning a Generative AI Project, AWS Artificial Intelligence Practitioner Learning Plan.

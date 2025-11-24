@@ -1,0 +1,23 @@
+About the job
+Experience: 4+ years
+name: Irfan
+eeru7788@gmial.com
+Develop, implement, and optimize time series forecasting models.
+ 
+Build and maintain end-to-end ML pipelines for data ingestion, preprocessing, model training, and deployment.
+ 
+Apply machine learning algorithms (regression, classification, ensemble methods, boosting, etc.) to business use cases.
+ 
+Design and train deep learning architectures (LSTM, GRU, CNNs, Transformers) for sequential and structured data.
+ 
+Perform feature engineering, hyperparameter tuning, and model evaluation.
+ 
+Collaborate with data engineers to ensure data quality, scalability, and efficient model deployment.
+ 
+Deploy models to production environments.
+ 
+Familiarity with MLOps best practices (versioning, monitoring, CI/CD for ML).
+ 
+Monitor, retrain, and maintain models for continuous improvement and drift detection.
+ 
+Document processes, models, and findings to ensure knowledge sharing and reproducibility

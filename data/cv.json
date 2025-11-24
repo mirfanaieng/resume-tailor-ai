@@ -1,0 +1,28 @@
+{
+  "name": "MUHAMMAD IRFAN",
+  "email": "m.irfan.aiengineer@gmail.com",
+  "phone": "+92-300-7147155",
+  "sections": {
+    "summary": "AI Engineer with proven experience delivering high-impact clinical AI solutions and scalable production tools. Skilled in model\ndevelopment (GANs, classifiers, OCR) and real-world deployment using Python, deep learning, and data engineering pipelines.\nAdept at bridging research to application — optimizing model accuracy, compliance, and usability across large datasets (20K+\nsamples).",
+    "experience": "Career Break (International Exposure) 10/2024 - 10/2025\nSpent a year abroad for personal development and broadening professional perspective.\nAI4LYF Lahore 06/2021 - 10/2024\nAI/ML Engineer\nBridging the gap between AI research and clinical practices.\nGAN-based Image Reconstruction: Built and optimized Pix2Pix model using loss functions (MAE, VGG, content, classifier-\nbased) for imaging enhancement.\nClassifier Development: Trained CNN-based multiclass multilabel classifier on hybrid datasets (real + GAN-generated),\nachieving high accuracy and validated synthetic data reliability.\nDashboard Engineering: Developed an interactive biomarker monitoring dashboard using Python Dash, improving\nreporting speed and visual analysis for clinical teams.\nOCR Automation: Automated form digitization and data extraction workflows using OpenCV, EasyOCR, and AWS\nTextract, cutting manual entry time and boosting data accuracy.\nBiomedical Audio Classification: Built XGBoost/ExtraTrees models for clinical audio signal classification across 4\nconditions, integrating demographic metadata for higher model robustness.\nData Infrastructure & Leadership: Designed and led a data collection framework (20K+ validated samples), including\nbackend app design, validation pipeline, and team training for safe, compliant data handling.\nDL Lab (KICS, UET)\nLahore 01/2021 - 02/2021\nAI Intern\nResearch lab focusing on machine learning and AI projects.\nBuilt an interactive regression dashboard using Django, improving data visualization and model evaluation efficiency.\nDigiSol Lahore 10/2020 - 12/2020\nWeb Developer Intern\nWeb development company.\nContributed to web development projects using Laravel and Magento.",
+    "education": "KICS, University of Engineering & Technology (UET), Lahore Lahore 09/2020 - 03/2021\nData Analytics\nThe University of Lahore Lahore 08/2014 - 05/2019\nBS in Software Engineering (CGPA: 3.71 / 4.00)\nGovt. College Boys Zafarwal Narowal 01/2012 - 12/2014\nIntermediate in Computer Science",
+    "skills": "Generative AI, LLMs, RAG, Prompt Engineering, GANs, Computer Vision, Signal Processing, OCR (Tesseract,\nEasyOCR, AWS Textract, OpenCV), Deep Learning, Python, TensorFlow, PyTorch, Data Visualization (Plotly,\nSeaborn, Dash), Research Implementation, AI Solution Development.\nCourses\nIntroduction to Amazon SageMaker, Foundations of Prompt Engineering, Amazon Bedrock: Getting\nStarted, Planning a Generative AI Project, AWS Artificial Intelligence Practitioner Learning Plan."
+  },
+  "skills": [
+    "Generative AI",
+    "Prompt Engineering",
+    "Computer Vision",
+    "Signal Processing",
+    "OCR (Tesseract",
+    "AWS Textract",
+    "Deep Learning",
+    "Data Visualization (Plotly",
+    "Research Implementation",
+    "AI Solution Development.",
+    "Introduction to Amazon SageMaker",
+    "Foundations of Prompt Engineering",
+    "Amazon Bedrock: Getting",
+    "Planning a Generative AI Project",
+    "AWS Artificial Intelligence Practitioner Learning Plan."
+  ]
+}
