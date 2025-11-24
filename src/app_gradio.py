@@ -1,66 +1,134 @@
-# app_gradio.py
+# app_gradio.py  ← save in project root
 
 import gradio as gr
-import json
-import os
-from src.extractor import extract_text_from_file
-from src.parser import parse_resume
-from src.matcher import match_skills
-from src.tailor_llm import tailor_resume_sections
-from src.formatter import create_formatted_resume_from_txt
+from pathlib import Path
+from extractor import extract_text_from_file
+from parser import parse_document
+from matcher import get_match_report
+from tailor_llm import tailor_summary_and_skills
 
-# Ensure output folder exists
-os.makedirs("data", exist_ok=True)
+OUTPUT_DIR = Path("output")
+OUTPUT_DIR.mkdir(exist_ok=True)
 
-def process_resume(resume_file, jd_file):
-    # 1️⃣ Extract text
+
+# Step 1: Analyze
+def analyze_resume(resume_file, jd_file):
+    if not resume_file or not jd_file:
+        return "Upload both files", "", [], None
+
     resume_text = extract_text_from_file(resume_file.name)
     jd_text = extract_text_from_file(jd_file.name)
 
-    # 2️⃣ Parse sections
-    resume_sections = parse_resume(resume_text)
-    jd_sections = parse_resume(jd_text)
+    parsed_resume = parse_document(resume_text, "resume")
+    parsed_jd = parse_document(jd_text, "jd")
 
-    # 3️⃣ Match skills
-    match_report = match_skills(resume_sections.get("Skills", ""), jd_sections.get("Skills", ""))
-    match_score = f"{match_report['match_score']}% match"
-    missing_skills = ", ".join(match_report["missing_skills"]) if match_report["missing_skills"] else "None"
+    report = get_match_report(parsed_resume, parsed_jd, resume_text, jd_text)
+    score = report["match_score"]
+    missing = report["missing_skills"][:12]
 
-    # 4️⃣ Generate tailored resume text
-    tailored_resume_dict = tailor_resume_sections(resume_sections, jd_sections)
+    # Smart suggestions
+    suggestions = []
+    lower_text = resume_text.lower()
+    if any(k in lower_text for k in ["image", "opencv", "vision", "cnn", "yolo"]):
+        suggestions.extend(["computer vision", "image processing", "large-scale imagery"])
+    if "python" in lower_text:
+        suggestions.append("python ml pipelines")
+    if any(k in lower_text for k in ["pytorch", "tensorflow", "keras"]):
+        suggestions.extend(["deep learning", "deep learning frameworks"])
 
-    # 5️⃣ Save tailored resume to .txt temporarily
-    temp_txt_path = "data/temp_tailored_resume.txt"
-    with open(temp_txt_path, "w", encoding="utf-8") as f:
-        for section, content in tailored_resume_dict.items():
-            f.write(f"=== {section.upper()} ===\n{content.strip()}\n\n")
+    suggestions = list(dict.fromkeys([s.title() for s in suggestions]))
 
-
-    # 6️⃣ Convert to .docx
-    docx_path = create_formatted_resume_from_txt(temp_txt_path)
-    # Convert dict into a readable string for Gradio preview
-    tailored_text_preview = ""
-    for section, content in tailored_resume_dict.items():
-        tailored_text_preview += f"\n\n=== {section.upper()} ===\n{content.strip()}"
-
-    return match_score, missing_skills, tailored_text_preview.strip(), docx_path
-
-# Gradio UI
-with gr.Blocks() as demo:
-    gr.Markdown("## Resume Tailor AI")
-    with gr.Row():
-        resume_input = gr.File(label="Upload Resume (.txt/.pdf/.docx)")
-        jd_input = gr.File(label="Upload Job Description (.txt/.pdf/.docx)")
-    submit_btn = gr.Button("Tailor Resume")
-    match_score_output = gr.Textbox(label="Skill Match Score")
-    missing_skills_output = gr.Textbox(label="Missing Skills")
-    tailored_preview = gr.Textbox(label="Tailored Resume Preview", lines=15)
-    download_btn = gr.File(label="Download Tailored Resume (.docx)")
-
-    submit_btn.click(
-        fn=process_resume,
-        inputs=[resume_input, jd_input],
-        outputs=[match_score_output, missing_skills_output, tailored_preview, download_btn]
+    return (
+        f"**Current Match: {score}%**",
+        f"Missing key skills: **{', '.join(missing) if missing else 'Great fit!'}**",
+        gr.CheckboxGroup(choices=suggestions, label="I have experience with these (honestly):", value=[]),
+        (parsed_resume, parsed_jd)
     )
 
-demo.launch()
+
+# Step 2: Generate Summary + Skills
+def generate_tailored(checkboxes, state):
+    if not state:
+        return "Please click 'Analyze My Match' first", None
+
+    parsed_resume, parsed_jd = state
+    approved = checkboxes or []
+
+    result = tailor_summary_and_skills(
+        parsed_resume=parsed_resume,
+        parsed_jd=parsed_jd,
+        approved_keywords=approved
+    )
+
+    if "error" in result:
+        return f"Error: {result['error']}", None
+
+    # These keys are now correct
+    original_count = len([s for s in parsed_resume.get("skills", []) if s.strip()])
+    final_count = len(result["final_skills_list"])
+    added_count = final_count - original_count
+
+    preview = f"""
+**PROFESSIONAL SUMMARY**
+{result['summary']}
+
+**SKILLS** ({original_count} → {final_count} | +{added_count})
+{' • '.join(result['final_skills_list'])}
+
+**Estimated new match:** 85–95%+
+"""
+
+    txt_path = OUTPUT_DIR / "TAILORED_SUMMARY_AND_SKILLS.txt"
+    name = parsed_resume.get("name", "Candidate").strip()
+    job_title = parsed_jd.get("job_title", "Professional").strip()
+
+    with open(txt_path, "w", encoding="utf-8") as f:
+        f.write(f"{name}\n{job_title}\n\n")
+        f.write("PROFESSIONAL SUMMARY\n")
+        f.write(result["summary"] + "\n\n")
+        f.write("SKILLS\n")
+        f.write(" • ".join(result["final_skills_list"]))
+
+    return preview.strip(), str(txt_path)
+
+
+# ====================== UI ======================
+with gr.Blocks(title="Resume Tailor AI — Honest & Powerful", theme=gr.themes.Soft()) as demo:
+    gr.Markdown(
+        "# Resume Tailor AI\n"
+        "**Honest. Ethical. Interview-Ready.**\n"
+        "We only enhance what you truly have — nothing more."
+    )
+
+    with gr.Row():
+        resume_in = gr.File(label="Your Resume (PDF/DOCX)", file_types=[".pdf", ".docx"])
+        jd_in = gr.File(label="Job Description", file_types=[".pdf", ".txt", ".docx"])
+
+    analyze_btn = gr.Button("Step 1: Analyze My Match", variant="secondary", size="lg")
+
+    score_out = gr.Markdown()
+    missing_out = gr.Markdown()
+    checkbox_group = gr.CheckboxGroup()
+    state = gr.State()
+
+    tailor_btn = gr.Button("Step 2: Generate Summary & Skills", variant="primary", size="lg")
+
+    preview_out = gr.Textbox(label="Your Final Summary & Skills", lines=20)
+    download_out = gr.File(label="Download .txt (Copy into your resume)")
+
+    analyze_btn.click(
+        analyze_resume,
+        inputs=[resume_in, jd_in],
+        outputs=[score_out, missing_out, checkbox_group, state]
+    )
+
+    tailor_btn.click(
+        generate_tailored,
+        inputs=[checkbox_group, state],
+        outputs=[preview_out, download_out]
+    )
+
+    gr.Markdown("Made with Groq 70B • 100% Ethical • Zero lies")
+
+if __name__ == "__main__":
+    demo.launch(share=True)

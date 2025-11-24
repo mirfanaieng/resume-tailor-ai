@@ -1,98 +1,146 @@
-import requests
+# src/llm_tailor.py
 import json
-from difflib import SequenceMatcher
+import logging
+import argparse
+from pathlib import Path
+from typing import Dict, Any, List
+from groq import Groq
+from dotenv import load_dotenv
+import re
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "phi"
+load_dotenv()
+client = Groq()
+logger = logging.getLogger("tailor")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
-def build_prompt(jd_text, resume_section):
+def tailor_summary_and_skills(
+    parsed_resume: Dict[str, Any],
+    parsed_jd: Dict[str, Any],
+    approved_keywords: List[str],
+    output_dir: str = "output"
+) -> Dict[str, Any]:
+    """
+    ETHICAL VERSION — Summary + Skills Only
+    • NO company name in summary (your request)
+    • Skills: only adds approved keywords (never removes)
+    • Returns only the 2 updated sections
+    """
+    Path(output_dir).mkdir(exist_ok=True)
+    approved_keywords = [k.strip().lower() for k in approved_keywords if k.strip()]
+
+    # Original data
+    original_skills = [s.strip().lower() for s in parsed_resume.get("skills", []) if s.strip()]
+    name = parsed_resume.get("name", "Candidate").strip()
+    job_title = parsed_jd.get("job_title", "Professional").strip()
+    # ← Company name is NOT used anywhere in the summary
+
     prompt = f"""
-You are an expert resume writer.
+You are a senior career coach writing a powerful, honest, and professional resume.
 
-Job Description:
-{jd_text}
+CANDIDATE: {name}
+TARGET ROLE: {job_title}
+CURRENT SKILLS: {", ".join(original_skills[:25])}
+APPROVED KEYWORDS TO INCLUDE: {", ".join(approved_keywords) or "None"}
 
-Resume Section:
-{resume_section}
+TASK: Return ONLY this exact JSON:
 
-Task:
-Rewrite the resume section so that it:
-1. Highlights relevant skills and achievements from the job description.
-2. Keeps tone professional, concise, and factual.
-3. Avoids copying JD sentences directly.
-4. Maintains original meaning but aligns more closely with the role.
+{{
+  "summary": "3–4 line confident, targeted professional summary. 
+  Use strong language. 
+  Mention the target role naturally. 
+  NEVER mention any company name.",
+  "skills_to_add": ["Computer Vision", "Image Processing", "Large-scale Imagery"],
+  "final_skills_list": ["Python", "PyTorch", "Computer Vision", ...],
+  "justification": "Brief note"
+}}
 
-Return only the improved section text.
+RULES:
+- Summary must NOT contain any company name
+- Only add skills from the approved_keywords list
+- Never remove existing skills
+- Return final_skills_list = original + approved (deduplicated, Title Case)
+- Keep tone senior and confident
+
+Return ONLY valid JSON.
 """
-    return prompt.strip()
-
-def generate_with_ollama(prompt, model=MODEL_NAME):
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "stream": False
-    }
-    response = requests.post(OLLAMA_URL, json=payload)
-    if response.status_code == 200:
-        return response.json().get("response", "").strip()
-    else:
-        raise Exception(f"Ollama API error: {response.text}")
-
-def tailor_resume_sections(resume_sections, jd_text):
-    tailored = {}
-    for section_name, section_text in resume_sections.items():
-        prompt = build_prompt(jd_text, section_text)
-        improved = generate_with_ollama(prompt)
-        tailored[section_name] = improved
-    return tailored
-
-def save_tailored_resume(tailored_sections, filename="tailored_resume.txt"):
-    with open(filename, "w") as f:
-        for section, content in tailored_sections.items():
-            f.write(f"### {section.upper()}\n{content}\n\n")
-
-def compare_sections(original, tailored):
-    """
-    Compare two text sections and return similarity in percentage.
-    Handles NoneType, empty strings, or non-string values gracefully.
-    """
-    # Ensure inputs are strings
-    if not isinstance(original, str):
-        original = "" if original is None else str(original)
-    if not isinstance(tailored, str):
-        tailored = "" if tailored is None else str(tailored)
-
-    # Handle completely missing text
-    if not original.strip() and not tailored.strip():
-        return 100.0   # both empty = identical
-    elif not original.strip() or not tailored.strip():
-        return 0.0     # one empty = no similarity
 
     try:
-        ratio = SequenceMatcher(None, original, tailored).ratio()
-        return round(ratio * 100, 2)
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4,
+            max_tokens=800
+        )
+        raw = response.choices[0].message.content.strip()
+        json_match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if not json_match:
+            raise ValueError("No JSON found")
+
+        result = json.loads(json_match.group(0))
+
+        # Final skills list: original + approved only
+        final_skills = list(dict.fromkeys(
+            [s.strip().title() for s in original_skills] +
+            [s.strip().title() for s in result.get("skills_to_add", []) if s.strip().lower() in approved_keywords]
+        ))
+
+        result["final_skills_list"] = final_skills
+        result["added_skills_count"] = len(final_skills) - len(original_skills)
+
+        # Save clean output (NO company name anywhere)
+        txt_path = Path(output_dir) / "SUMMARY_AND_SKILLS.txt"
+        with open(txt_path, "w", encoding="utf-8") as f:
+            f.write(f"{name}\n")
+            f.write(f"{job_title}\n\n")
+            f.write("PROFESSIONAL SUMMARY\n")
+            f.write(result["summary"] + "\n\n")
+            f.write("SKILLS\n")
+            f.write(" • ".join(final_skills))
+
+        result["updated_file"] = str(txt_path)
+        logger.info(f"Summary & Skills updated (no company name) → {txt_path}")
+        return result
+
     except Exception as e:
-        print(f"⚠️ Error comparing sections: {e}")
-        return 0.0
+        logger.error(f"Failed: {e}")
+        return {"error": str(e)}
+
+
+# ==================== CLI ====================
+def main():
+    parser = argparse.ArgumentParser(description="Resume Tailor AI — Summary & Skills Only (No Company Name)")
+    parser.add_argument("resume", help="Your resume file")
+    parser.add_argument("jd", help="Job description file")
+    parser.add_argument("-k", "--keywords", nargs="+", default=[],
+                        help="Approved keywords (e.g. 'computer vision' 'image processing')")
+    parser.add_argument("-o", "--output", default="output", help="Output folder")
+
+    args = parser.parse_args()
+
+    from extractor import extract_text_from_file
+    from parser import parse_document
+
+    print("Parsing files...")
+    resume_text = extract_text_from_file(args.resume)
+    jd_text = extract_text_from_file(args.jd)
+
+    parsed_resume = parse_document(resume_text, "resume")
+    parsed_jd = parse_document(jd_text, "jd")
+
+    print(f"Adding {len(args.keywords)} approved keywords...")
+    result = tailor_summary_and_skills(parsed_resume, parsed_jd, args.keywords, args.output)
+
+    if "error" not in result:
+        print("\n" + "="*60)
+        print("UPDATED SUMMARY & SKILLS (NO COMPANY NAME)")
+        print("="*60)
+        print(open(result["updated_file"]).read())
+        print("="*60)
+        print(f"Skills: {len([s for s in parsed_resume.get('skills', []) if s.strip()])} → {len(result['final_skills_list'])} (+{result['added_skills_count']})")
+    else:
+        print("Error:", result["error"])
+
 
 if __name__ == "__main__":
-    # load resume sections
-    with open("data/jd_sample.txt") as f:
-        jd_text = f.read()
-    with open("data/parsed_resume.json") as f:
-        resume_sections = json.load(f)  # e.g. {"Summary": "...", "Experience": "...", "Skills": "..."}
-
-    tailored = tailor_resume_sections(resume_sections, jd_text)
-    save_tailored_resume(tailored, filename="data/tailored_resume.txt")
-    print("\n✅ Tailored resume saved to data/tailored_resume.txt")
-
-    # Compare original and tailored sections
-    for section, original_text in resume_sections.items():
-        tailored_text = tailored.get(section, "")
-        similarity = compare_sections(original_text, tailored_text)
-        print(f"Section: {section} | Similarity: {similarity}%")
-
-        
-
-
+    main()

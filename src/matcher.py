@@ -1,75 +1,119 @@
-# matcher.py
-import os
-import json
+# src/matcher.py
 import logging
 from typing import List, Dict, Any
-from keybert import KeyBERT
-import spacy
+from extractor import extract_text_from_file
+from parser import parse_document
 
-# Import your previous modules
-import extractor
-import parser
+# Optional: keep KeyBERT as smart fallback only
+try:
+    from keybert import KeyBERT
+    kw_model = KeyBERT()
+    KEYBERT_AVAILABLE = True
+except ImportError:
+    KEYBERT_AVAILABLE = False
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("matcher")
 
-nlp = spacy.load("en_core_web_sm")
-kw_model = KeyBERT()
 
-def extract_keywords(text: str, n: int = 15) -> List[str]:
-    if not text or not text.strip():
+def extract_keywords_fallback(text: str, top_n: int = 12) -> List[str]:
+    """Fallback using KeyBERT only if installed"""
+    if not KEYBERT_AVAILABLE or not text:
         return []
-    keywords = kw_model.extract_keywords(
-        text, keyphrase_ngram_range=(1, 2), stop_words='english', top_n=n
-    )
-    return [kw[0].lower() for kw in keywords]
+    try:
+        keywords = kw_model.extract_keywords(
+            text,
+            keyphrase_ngram_range=(1, 2),
+            stop_words="english",
+            top_n=top_n,
+            use_mmr=True,
+            diversity=0.5
+        )
+        return [kw[0].lower() for kw in keywords]
+    except:
+        return []
 
-def clean_skills(skills: List[str]) -> List[str]:
-    return list({s.lower().strip() for s in skills if s.strip()})
 
-def match_skills(resume_skills: List[str], jd_skills: List[str]) -> Dict[str, Any]:
-    resume_set = set(clean_skills(resume_skills))
-    jd_set = set(clean_skills(jd_skills))
+def match_skills(
+    resume_skills: List[str],
+    jd_skills: List[str],
+    resume_text: str = "",
+    jd_text: str = ""
+) -> Dict[str, Any]:
+    """
+    Main skill matching function.
+    Uses parser skills first → falls back to KeyBERT only if needed.
+    """
+    # Clean and normalize
+    def clean(skill_list):
+        return {str(s).strip().lower() for s in skill_list if s and str(s).strip()}
 
-    matched = list(resume_set & jd_set)
-    missing = list(jd_set - resume_set)
+    resume_set = clean(resume_skills)
+    jd_set = clean(jd_skills)
 
-    match_score = round((len(matched) / len(jd_set)) * 100, 2) if jd_set else 0
+    # Fallback: if parser gave us almost nothing, use KeyBERT
+    if len(resume_set) < 3 and resume_text:
+        logger.info("Parser gave few resume skills → using KeyBERT fallback")
+        resume_set.update(clean(extract_keywords_fallback(resume_text)))
+
+    if len(jd_set) < 3 and jd_text:
+        logger.info("Parser gave few JD skills → using KeyBERT fallback")
+        jd_set.update(clean(extract_keywords_fallback(jd_text)))
+
+    if not jd_set:
+        return {
+            "match_score": 0.0,
+            "matched_skills": [],
+            "missing_skills": [],
+            "total_required": 0,
+            "message": "No skills detected in Job Description"
+        }
+
+    matched = sorted(list(resume_set & jd_set))
+    missing = sorted(list(jd_set - resume_set))
+
+    match_score = round((len(matched) / len(jd_set)) * 100, 1)
+
+    logger.info(f"Skill Match: {len(matched)}/{len(jd_set)} → {match_score}%")
 
     return {
+        "match_score": match_score,
         "matched_skills": matched,
         "missing_skills": missing,
-        "match_score": match_score
+        "total_required": len(jd_set),
+        "matched_count": len(matched),
+        "source": "parser + keybert_fallback" if (len(resume_set) > len(clean(resume_skills)) or len(jd_set) > len(clean(jd_skills))) else "parser_only"
     }
 
-def save_report(report: Dict[str, Any], filename: str = "data/skill_match_report.json"):
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, "w") as f:
-        json.dump(report, f, indent=4)
-    logging.info(f"Report saved to {filename}")
 
-if __name__ == "__main__":
-    # 1. Extract raw text using your extractor
-    resume_text = extractor.extract_text_from_file("data/cv.pdf")
-    jd_text = extractor.extract_text_from_file("data/jd.txt")
-
-    # 2. Parse structured data using your parser
-    parsed_resume = parser.parse_document(resume_text, doc_type="resume", file_name="data/cv.pdf")  # returns dict with 'skills', 'experience', etc.
-    parsed_jd = parser.parse_document(jd_text, doc_type="jd", file_name="data/jd.txt")            # returns dict with 'skills', 'requirements', etc.
-
-    # 3. Use skills for matching
+# High-level function used by Gradio / main pipeline
+def get_match_report(
+    parsed_resume: Dict[str, Any],
+    parsed_jd: Dict[str, Any],
+    resume_text: str = "",
+    jd_text: str = ""
+) -> Dict[str, Any]:
     resume_skills = parsed_resume.get("skills", [])
     jd_skills = parsed_jd.get("skills", [])
 
-    # Optional: fallback to KeyBERT if parser didn't detect enough skills
-    if not resume_skills:
-        resume_skills = extract_keywords(resume_text)
-    if not jd_skills:
-        jd_skills = extract_keywords(jd_text)
+    return match_skills(resume_skills, jd_skills, resume_text, jd_text)
 
-    # 4. Match skills
-    report = match_skills(resume_skills, jd_skills)
 
-    # 5. Save report
-    save_report(report)
-    logging.info(json.dumps(report, indent=4))
+# Test it
+if __name__ == "__main__":
+    
+
+    resume_path = "data/cv.pdf"
+    jd_path = "data/jd.txt"
+
+    resume_text = extract_text_from_file(resume_path)
+    jd_text = extract_text_from_file(jd_path)
+
+    parsed_resume = parse_document(resume_text, "resume")
+    parsed_jd = parse_document(jd_text, "jd")
+
+    report = get_match_report(parsed_resume, parsed_jd, resume_text, jd_text)
+    print("\nMATCH REPORT:")
+    print(f"Score: {report['match_score']}%")
+    print(f"Matched: {', '.join(report['matched_skills'])}")
+    print(f"Missing: {', '.join(report['missing_skills'][:10])}")
